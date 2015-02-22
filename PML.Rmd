@@ -1,0 +1,72 @@
+---
+title: "Practical Machine Learning Assignment"
+author: "Fideborios"
+date: "Sunday, February 22, 2015"
+output: html_document
+---
+
+
+  In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+  Our goal  is to predict the manner in which they did the exercise. This is the "classe" variable in the training set.
+  First of all we are calling the libraries that we wil use and load the Train-Test csv files. 
+
+```{r ,eval=FALSE}
+library(caret)
+
+```
+
+
+```{r }
+##set a WD of your choise that contains the pml-testing.csv pml-training.csv ##
+testBulk <- read.csv("pml-testing.csv",na.strings=c("NA",""))
+trainBulk <- read.csv("pml-training.csv",na.strings=c("NA",""))
+
+dim(trainBulk)
+```
+
+```{r}
+head(trainBulk)
+```
+
+
+As we can see there a lot of NA values that will effect our analysis.
+But how many are there in every variable?
+```{r}
+NAs <- apply(trainBulk,2,function(x) {sum(is.na(x))}) 
+```
+Here is the 20 first.
+```{r}
+##You can see all the variables by deleting [1:20]##
+NAs[1:20]
+```
+
+We check the NAs if they have "some" information to provide, but all the missing values count to 19216 meanning that most of our observations are missing in 100 variables. Now lets clean our datas by ommiting the NA variables.
+
+```{r}
+cleanTrain <- trainBulk[,which(NAs == 0)]
+cleanTest <- testBulk[,which(NAs == 0)]
+
+```
+
+We are creating the partition. Then we are removing the unnecessary columns like 
+"user_name" or "raw_timestamp_part_1"
+
+```{r, eval=FALSE}
+trainIndex <- createDataPartition(y = cleanTrain$classe, p=0.7,list=FALSE)
+trainSet <- cleanTrain[trainIndex,]
+TestSet <- cleanTrain[-trainIndex,]
+
+# Removing variables that have time, or names in it, also new_window. Columns 1..6
+removeIndex <- as.integer(c(1,2,3,4,5,6))
+trainSet <- trainSet[,-removeIndex]
+testSet <- cleanTest[,-removeIndex]
+
+```
+
+Finally we are modeling and get the predictions.
+```{r, eval=FALSE}
+modelFit <- train(trainSet$classe ~.,data = trainSet, method="rf")
+
+predicted <- predict(modelFit, crossValidationSet)
+SampleError <- sum(predicted == crossValidationSet$classe)/nrow(crossValidationSet)
+```
